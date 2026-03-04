@@ -1,9 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const CORE_FILE = path.join(__dirname, 'core_identity.json');
+// Mengarah ke root directory karena skrip ada di dalam folder scripts/
+const ROOT_DIR = path.join(__dirname, '..');
+const CORE_FILE = path.join(ROOT_DIR, 'core_identity.json');
+const ACCEPTED_DIR = path.join(ROOT_DIR, 'patches', 'accepted');
 
-// Fungsi untuk membaca JSON
 function readJSON(filePath) {
 	if (!fs.existsSync(filePath)) {
 		throw new Error(`File tidak ditemukan: ${filePath}`);
@@ -11,28 +13,27 @@ function readJSON(filePath) {
 	return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
-// Fungsi untuk menyimpan JSON dengan indentasi tab
 function writeJSON(filePath, data) {
 	fs.writeFileSync(filePath, JSON.stringify(data, null, '\t'), 'utf8');
 }
 
-// Fungsi rekursif untuk menavigasi dot notation (misal: "cognitive_state.technical_matrix")
 function getTargetNode(obj, pathString) {
 	const keys = pathString.split('.');
 	let current = obj;
 	for (let i = 0; i < keys.length - 1; i++) {
 		if (current[keys[i]] === undefined) {
-			current[keys[i]] = {}; // Buat node jika belum ada
+			current[keys[i]] = {}; 
 		}
 		current = current[keys[i]];
 	}
 	return { parent: current, key: keys[keys.length - 1] };
 }
 
-// Fungsi utama untuk mengeksekusi patch
-function applyPatch(patchFilePath) {
-	console.log(`\n[INFO] Membaca patch dari: ${patchFilePath}`);
-	const patch = readJSON(patchFilePath);
+function acceptPatch(proposalPath) {
+	console.log(`\n[INFO] Mengevaluasi proposal dari: ${proposalPath}`);
+	
+	// 1. Baca Patch & Core
+	const patch = readJSON(proposalPath);
 	const core = readJSON(CORE_FILE);
 
 	const targetNodePath = patch.target.node;
@@ -43,47 +44,52 @@ function applyPatch(patchFilePath) {
 
 	console.log(`[INFO] Mengeksekusi aksi '${action}' pada node '${targetNodePath}'`);
 
-	// Eksekusi berdasarkan tipe aksi
+	// 2. Modifikasi Data (In-Memory)
 	if (action === 'add') {
 		if (Array.isArray(parent[key])) {
-			parent[key].push(payloadValue); // Jika array, tambahkan ke elemen terakhir
+			parent[key].push(payloadValue);
 		} else if (parent[key] === undefined) {
 			parent[key] = Array.isArray(payloadValue) ? payloadValue : [payloadValue];
 		} else {
 			throw new Error(`Node ${targetNodePath} bukan array, gunakan aksi 'update'`);
 		}
 	} else if (action === 'update') {
-		parent[key] = payloadValue; // Timpa nilai yang ada
+		parent[key] = payloadValue;
 	} else if (action === 'delete') {
-		delete parent[key]; // Hapus node
+		delete parent[key];
 	} else {
 		throw new Error(`Aksi tidak dikenali: ${action}`);
 	}
 
-	// Update Metadata (Naikkan versi patch & perbarui timestamp)
+	// 3. Update Metadata
 	const now = new Date();
 	core.metadata.last_updated = now.toISOString();
 	
 	const versionParts = core.metadata.version.split('.');
-	versionParts[2] = parseInt(versionParts[2]) + 1; // Increment patch version (x.y.Z)
+	versionParts[2] = parseInt(versionParts[2]) + 1; 
 	core.metadata.version = versionParts.join('.');
 
 	console.log(`[INFO] Memperbarui versi core_identity menjadi: ${core.metadata.version}`);
 
-	// Simpan kembali ke core_identity.json
+	// 4. Simpan ke core_identity.json
 	writeJSON(CORE_FILE, core);
-	console.log(`[SUCCESS] Patch berhasil diterapkan pada core_identity.json\n`);
+	
+	// 5. Pindahkan file patch ke folder accepted/
+	const fileName = path.basename(proposalPath);
+	const acceptedPath = path.join(ACCEPTED_DIR, fileName);
+	fs.renameSync(proposalPath, acceptedPath);
+	
+	console.log(`[SUCCESS] Patch dieksekusi dan diarsipkan ke: patches/accepted/${fileName}\n`);
 }
 
-// Eksekusi dari Command Line
 const args = process.argv.slice(2);
 if (args.length === 0) {
-	console.log("Penggunaan: node apply_patch.js <path_ke_file_patch.json>");
+	console.log("Penggunaan: node scripts/accept_patch.js <path_ke_file_proposal.json>");
 	process.exit(1);
 }
 
 try {
-	applyPatch(args[0]);
+	acceptPatch(args[0]);
 } catch (error) {
-	console.error(`[ERROR] Gagal menerapkan patch: ${error.message}`);
+	console.error(`[ERROR] Gagal menerima patch: ${error.message}`);
 }
