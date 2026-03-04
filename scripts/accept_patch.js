@@ -1,14 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const Ajv = require('ajv');
+const addFormats = require('ajv-formats'); // <-- Tambahan baru
 
 const ajv = new Ajv();
+addFormats(ajv); // <-- Mengaktifkan plugin date-time
 
 // Mengarah ke root directory
 const ROOT_DIR = path.join(__dirname, '..');
 const ACCEPTED_DIR = path.join(ROOT_DIR, 'patches', 'accepted');
 const MEMORY_LOGS_DIR = path.join(ROOT_DIR, 'patches', 'memory_logs');
-const SCHEMAS_DIR = path.join(ROOT_DIR, 'schemas'); // Direktori skema baru
+const SCHEMAS_DIR = path.join(ROOT_DIR, 'schemas');
 
 if (!fs.existsSync(MEMORY_LOGS_DIR)) {
 	fs.mkdirSync(MEMORY_LOGS_DIR, { recursive: true });
@@ -61,7 +63,6 @@ function acceptPatch(proposalPath) {
 	
 	const patch = readJSON(proposalPath);
 	
-	// 1. Identifikasi Target File & Skema Validasi
 	const targetFileName = (patch.target && patch.target.file) ? patch.target.file : 'core_identity.json';
 	const targetFilePath = path.join(ROOT_DIR, targetFileName);
 	
@@ -81,7 +82,6 @@ function acceptPatch(proposalPath) {
 
 	console.log(`[INFO] Mengeksekusi aksi '${action}' pada node '${targetNodePath}'`);
 
-	// 2. Logika Eksekusi Aksi (Di Memori)
 	if (action === 'add') {
 		if (Array.isArray(parent[key])) {
 			parent[key].push(payload);
@@ -109,7 +109,6 @@ function acceptPatch(proposalPath) {
 		throw new Error(`Aksi tidak dikenali: ${action}`);
 	}
 
-	// 3. Update Metadata Global (Timestamp & Version)
 	const now = new Date();
 	if (targetObj.metadata) {
 		targetObj.metadata.last_updated = now.toISOString();
@@ -126,15 +125,12 @@ function acceptPatch(proposalPath) {
 		destinationDir = MEMORY_LOGS_DIR;
 	}
 
-	// 4. VALIDASI ABSOLUT SEBELUM MENYIMPAN
 	console.log(`[INFO] Memvalidasi hasil akhir terhadap ${targetSchemaName}...`);
 	validateAgainstSchema(targetObj, targetSchemaName);
 	console.log(`[SUCCESS] Validasi skema lulus. Epistemologi data terjaga.`);
 
-	// 5. Simpan Perubahan ke File Target
 	writeJSON(targetFilePath, targetObj);
 	
-	// 6. Arsipkan File Patch
 	const fileName = path.basename(proposalPath);
 	const archivedPath = path.join(destinationDir, fileName);
 	fs.renameSync(proposalPath, archivedPath);

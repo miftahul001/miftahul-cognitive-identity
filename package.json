@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/miftahul001/miftahul-cognitive-identity#readme",
   "dependencies": {
-    "ajv": "^8.18.0"
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1"
   }
 }
