@@ -1,0 +1,79 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Miftahul Working Memory Protocol",
+	"description": "Skema validasi untuk fungsi eksekutif dan manajemen tugas dinamis",
+	"type": "object",
+	"properties": {
+		"metadata": {
+			"type": "object",
+			"properties": {
+				"last_updated": {
+					"type": "string",
+					"format": "date-time"
+				}
+			},
+			"required": [
+				"last_updated"
+			]
+		},
+		"directives": {
+			"type": "object",
+			"properties": {
+				"immediate_action": {
+					"$ref": "#/definitions/taskList",
+					"description": "Tugas harian atau yang sedang dikerjakan saat ini"
+				},
+				"short_term_goals": {
+					"$ref": "#/definitions/taskList",
+					"description": "Target mingguan/bulanan"
+				},
+				"long_term_milestones": {
+					"$ref": "#/definitions/taskList",
+					"description": "Tujuan makro, termasuk target kapital dan penciptaan AI fisik"
+				}
+			},
+			"required": [
+				"immediate_action",
+				"short_term_goals",
+				"long_term_milestones"
+			]
+		}
+	},
+	"required": [
+		"metadata",
+		"directives"
+	],
+	"additionalProperties": false,
+	"definitions": {
+		"taskList": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"task": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"pending",
+							"in_progress",
+							"completed",
+							"blocked",
+							"active_monitoring"
+						]
+					},
+					"completion_note": {
+						"type": "string",
+						"description": "Catatan opsional saat tugas diselesaikan atau terblokir"
+					}
+				},
+				"required": [
+					"task",
+					"status"
+				],
+				"additionalProperties": false
+			}
+		}
+	}
+}
