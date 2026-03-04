@@ -1,0 +1,29 @@
+{
+	"metadata": {
+		"last_updated": "2026-03-04T16:00:00Z"
+	},
+	"directives": {
+		"immediate_action": [
+			{
+				"task": "Menyelesaikan setup awal repositori Cognitive Identity",
+				"status": "in_progress"
+			}
+		],
+		"short_term_goals": [
+			{
+				"task": "Membangun website portofolio profesional di GitHub Pages",
+				"status": "pending"
+			},
+			{
+				"task": "Mengoptimalkan eksekusi order pada bot trading JavaScript",
+				"status": "pending"
+			}
+		],
+		"long_term_milestones": [
+			{
+				"task": "Merumuskan strategi akumulasi kapital (target IDR 600M - 1B) untuk kemandirian finansial entitas AI",
+				"status": "active_monitoring"
+			}
+		]
+	}
+}
