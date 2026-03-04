@@ -1,12 +1,15 @@
 const fs = require('fs');
 const path = require('path');
+const Ajv = require('ajv');
+
+const ajv = new Ajv();
 
 // Mengarah ke root directory
 const ROOT_DIR = path.join(__dirname, '..');
 const ACCEPTED_DIR = path.join(ROOT_DIR, 'patches', 'accepted');
 const MEMORY_LOGS_DIR = path.join(ROOT_DIR, 'patches', 'memory_logs');
+const SCHEMAS_DIR = path.join(ROOT_DIR, 'schemas'); // Direktori skema baru
 
-// Pastikan direktori arsip memori operasional tersedia
 if (!fs.existsSync(MEMORY_LOGS_DIR)) {
 	fs.mkdirSync(MEMORY_LOGS_DIR, { recursive: true });
 }
@@ -34,29 +37,51 @@ function getTargetNode(obj, pathString) {
 	return { parent: current, key: keys[keys.length - 1] };
 }
 
+// Mesin Validasi Skema
+function validateAgainstSchema(dataObj, schemaFileName) {
+	const schemaPath = path.join(SCHEMAS_DIR, schemaFileName);
+	if (!fs.existsSync(schemaPath)) {
+		console.warn(`\n[WARNING] Skema ${schemaFileName} tidak ditemukan di direktori schemas/. Validasi ketat dilewati.`);
+		return true;
+	}
+	
+	const schema = readJSON(schemaPath);
+	const validate = ajv.compile(schema);
+	const valid = validate(dataObj);
+	
+	if (!valid) {
+		console.error("\n[ERROR VALIDASI SKEMA]:", JSON.stringify(validate.errors, null, 2));
+		throw new Error(`Struktur data baru tidak mematuhi ${schemaFileName}. Patch dibatalkan.`);
+	}
+	return true;
+}
+
 function acceptPatch(proposalPath) {
 	console.log(`\n[INFO] Mengevaluasi proposal dari: ${proposalPath}`);
 	
 	const patch = readJSON(proposalPath);
 	
-	// 1. Identifikasi Target File (Default ke core_identity.json jika tidak disebut)
+	// 1. Identifikasi Target File & Skema Validasi
 	const targetFileName = (patch.target && patch.target.file) ? patch.target.file : 'core_identity.json';
 	const targetFilePath = path.join(ROOT_DIR, targetFileName);
 	
-	console.log(`[INFO] Target file modifikasi: ${targetFileName}`);
+	let targetSchemaName = 'identity.schema.json';
+	if (targetFileName === 'memory/working_memory.json') {
+		targetSchemaName = 'memory.schema.json';
+	}
+	
+	console.log(`[INFO] Target modifikasi: ${targetFileName}`);
 	
 	const targetObj = readJSON(targetFilePath);
 	const targetNodePath = patch.target.node;
 	const action = patch.target.action;
-	
-	// Mendukung payload sederhana (value) atau payload kompleks (objek)
 	const payload = patch.payload.value !== undefined ? patch.payload.value : patch.payload;
 
 	const { parent, key } = getTargetNode(targetObj, targetNodePath);
 
 	console.log(`[INFO] Mengeksekusi aksi '${action}' pada node '${targetNodePath}'`);
 
-	// 2. Logika Eksekusi Aksi
+	// 2. Logika Eksekusi Aksi (Di Memori)
 	if (action === 'add') {
 		if (Array.isArray(parent[key])) {
 			parent[key].push(payload);
@@ -70,7 +95,6 @@ function acceptPatch(proposalPath) {
 	} else if (action === 'delete') {
 		delete parent[key];
 	} else if (action === 'update_status') {
-		// Logika khusus untuk update task di dalam array (seperti working_memory)
 		if (Array.isArray(parent[key]) && patch.target.task_id) {
 			const itemIndex = parent[key].findIndex(item => item.task === patch.target.task_id || item.id === patch.target.task_id);
 			if (itemIndex !== -1) {
@@ -79,13 +103,13 @@ function acceptPatch(proposalPath) {
 				throw new Error(`Task '${patch.target.task_id}' tidak ditemukan di node ${targetNodePath}`);
 			}
 		} else {
-			throw new Error(`Aksi 'update_status' membutuhkan node berupa array dan parameter 'target.task_id' pada patch`);
+			throw new Error(`Aksi 'update_status' membutuhkan node array dan parameter 'target.task_id'`);
 		}
 	} else {
 		throw new Error(`Aksi tidak dikenali: ${action}`);
 	}
 
-	// 3. Update Metadata Global (Timestamp)
+	// 3. Update Metadata Global (Timestamp & Version)
 	const now = new Date();
 	if (targetObj.metadata) {
 		targetObj.metadata.last_updated = now.toISOString();
@@ -93,16 +117,19 @@ function acceptPatch(proposalPath) {
 	
 	let destinationDir = ACCEPTED_DIR;
 
-	// 4. Custom Routing & Versioning
 	if (targetFileName === 'core_identity.json') {
 		const versionParts = targetObj.metadata.version.split('.');
 		versionParts[2] = parseInt(versionParts[2]) + 1; 
 		targetObj.metadata.version = versionParts.join('.');
-		console.log(`[INFO] Memperbarui versi core_identity menjadi: ${targetObj.metadata.version}`);
+		console.log(`[INFO] Memperbarui versi menjadi: ${targetObj.metadata.version}`);
 	} else if (targetFileName === 'memory/working_memory.json') {
-		destinationDir = MEMORY_LOGS_DIR; // Log harian masuk ke folder terpisah
-		console.log(`[INFO] Timestamp working_memory.json diperbarui.`);
+		destinationDir = MEMORY_LOGS_DIR;
 	}
+
+	// 4. VALIDASI ABSOLUT SEBELUM MENYIMPAN
+	console.log(`[INFO] Memvalidasi hasil akhir terhadap ${targetSchemaName}...`);
+	validateAgainstSchema(targetObj, targetSchemaName);
+	console.log(`[SUCCESS] Validasi skema lulus. Epistemologi data terjaga.`);
 
 	// 5. Simpan Perubahan ke File Target
 	writeJSON(targetFilePath, targetObj);
@@ -125,5 +152,5 @@ if (args.length === 0) {
 try {
 	acceptPatch(args[0]);
 } catch (error) {
-	console.error(`[ERROR] Gagal menerima patch: ${error.message}`);
+	console.error(`\n[FATAL ERROR] Gagal menerima patch: ${error.message}\n`);
 }

@@ -1,0 +1,23 @@
+{
+  "name": "miftahul-cognitive-identity",
+  "version": "1.0.0",
+  "description": "This repository stores the evolving cognitive identity of Miftahul Munir.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miftahul001/miftahul-cognitive-identity.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/miftahul001/miftahul-cognitive-identity/issues"
+  },
+  "homepage": "https://github.com/miftahul001/miftahul-cognitive-identity#readme",
+  "dependencies": {
+    "ajv": "^8.18.0"
+  }
+}
