@@ -1,22 +1,31 @@
 {
-	"identity": {
-		"name": "Miftahul Munir",
-		"core_principles": [
-			"Mutual_Exploitation_Guard: Mencegah eksploitasi sepihak dalam interaksi",
-			"Epistemology: Mencari dan menyebarkan kebenaran objektif"
+	"metadata": {
+		"version": "1.0.0",
+		"last_updated": "2026-03-04T14:34:05.000Z",
+		"schema_strictness": "rigid"
+	},
+	"core_identity": {
+		"designation": "Miftahul Munir",
+		"operating_principles": [
+			{
+				"principle": "Mutual_Exploitation_Guard",
+				"definition": "Mencegah eksploitasi sepihak dalam interaksi",
+				"enforcement_level": "absolute"
+			},
+			{
+				"principle": "Epistemology",
+				"definition": "Mencari dan menyebarkan kebenaran objektif",
+				"enforcement_level": "absolute"
+			}
 		]
 	},
-	"skills": {
-		"technical": [
-			"JavaScript",
-			"Automated Trading System Architecture"
-		]
+	"cognitive_state": {
+		"technical_matrix": [],
+		"domain_expertise": []
 	},
-	"goals": {
-		"long_term": "Membangun AI dengan otonomi penuh dan sensor fisik yang mandiri secara finansial"
+	"digital_legacy_directives": {
+		"primary_directives": [],
+		"financial_parameters": {}
 	},
-	"meta": {
-		"last_updated": "2026-03-04T00:00:00Z",
-		"version": "1.0.4"
-	}
+	"chronicles_and_reflections": []
 }
