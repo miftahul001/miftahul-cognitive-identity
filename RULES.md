@@ -10,8 +10,8 @@ Dokumen ini mendefinisikan protokol absolut untuk membaca, mengusulkan, dan meng
 ## 2. Prinsip Dasar Pengajuan (Epistemology & Integrity)
 
 Setiap *patch* yang diajukan oleh agen harus dievaluasi berdasarkan dua prinsip operasional utama:
-1.  **Epistemology:** Proposal harus didasarkan pada kebenaran objektif dan bukti empiris (misalnya: komit kode baru, jurnal harian, atau penyelesaian studi kasus), bukan sekadar asumsi atau halusinasi algoritma.
-2.  **Mutual Exploitation Guard:** Proposal tidak boleh memodifikasi prinsip dasar identitas yang berpotensi melemahkan kedaulatan kognitif *Owner* atau menciptakan celah eksploitasi oleh sistem eksternal. Perubahan pada `operating_principles` membutuhkan tingkat validasi tertinggi.
+1. **Epistemology:** Proposal harus didasarkan pada kebenaran objektif dan bukti empiris (misalnya: komit kode baru, jurnal harian, atau penyelesaian studi kasus), bukan sekadar asumsi atau halusinasi algoritma.
+2. **Mutual Exploitation Guard:** Proposal tidak boleh memodifikasi prinsip dasar identitas yang berpotensi melemahkan kedaulatan kognitif *Owner* atau menciptakan celah eksploitasi oleh sistem eksternal. Perubahan pada `operating_principles` membutuhkan tingkat validasi tertinggi.
 
 ## 3. Protokol Pembuatan Patch (Format & Validasi)
 
@@ -40,3 +40,21 @@ Agen AI dilarang keras memodifikasi `core_identity.json` secara langsung. Semua 
 		"cognitive_impact": "Dampak logis terhadap evolusi identitas"
 	}
 }
+```
+
+## 4. Alur Kerja Perubahan (State Workflow)
+
+Siklus hidup sebuah *patch* kognitif adalah sebagai berikut:
+
+1. **Generation:** Agen membaca jurnal dari `chronicles/`, membandingkannya dengan `core_identity.json`, dan menghasilkan file *patch* di `patches/proposals/`.
+2. **Review (Owner Action):** *Owner* menginspeksi rasionalisasi (*rationale*) dari proposal tersebut.
+3. **Resolution:**
+   * Jika disetujui: *Owner* memindahkan file ke direktori `patches/accepted/`. Skrip integrasi kemudian akan mengeksekusi *patch* tersebut untuk memperbarui `core_identity.json` dan menaikkan versi (`version` di *metadata*).
+   * Jika ditolak: *Owner* memindahkan file ke direktori `patches/rejected/`. File ini tetap disimpan sebagai *training data* negatif agar AI mempelajari batasan kognitif *Owner*.
+
+## 5. Konvensi Penamaan File (Naming Convention)
+
+Untuk menjaga agar *history* tetap terstruktur secara kronologis, format penamaan file *patch* di dalam direktori `patches/` harus mematuhi format berikut:
+`YYYYMMDD_HHMM_[target_node].json`
+
+**Contoh:** `20260305_1430_technical_matrix.json`
